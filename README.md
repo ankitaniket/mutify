@@ -168,6 +168,28 @@ For the per-file deep dive, see [`PLAN.md`](./PLAN.md).
 
 ---
 
+## Install (one command)
+
+> **Requires** the [GitHub CLI](https://cli.github.com/) (`brew install gh`) to be
+> installed and authenticated (`gh auth login`), since this repo is currently
+> private. The installer downloads the latest release DMG, copies the app into
+> `/Applications`, strips the macOS quarantine attribute (so you skip the
+> "Apple cannot verify…" / "damaged" warnings), and launches Mutify.
+
+```bash
+gh repo clone ankitaniket/mutify /tmp/mutify-install \
+  && bash /tmp/mutify-install/install.sh
+```
+
+That's it. The mic icon will appear in your menu bar; press `⌘⇧0` to toggle.
+
+> When the repo eventually becomes public, the one-liner will simplify to:
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
+> ```
+
+---
+
 ## Building from source
 
 You need **Xcode 15+** and **Homebrew**.
