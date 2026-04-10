@@ -40,7 +40,7 @@ elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
 fi
 bold "→ Looking up the latest Mutify release on github.com/${REPO}…"
 API_URL="https://api.github.com/repos/${REPO}/releases/latest"
-RELEASE_JSON=$(curl -fsSL "${AUTH_HEADER[@]}" "$API_URL" 2>/dev/null) || {
+RELEASE_JSON=$(curl -fsSL ${AUTH_HEADER[@]+"${AUTH_HEADER[@]}"} "$API_URL" 2>/dev/null) || {
   red "✗ Could not reach the GitHub API at $API_URL"
   exit 1
 }
@@ -56,8 +56,8 @@ fi
 DMG_NAME=$(basename "$ASSET_URL")
 DMG_PATH="$TMP/$DMG_NAME"
 dim "  Found: $DMG_NAME"
-bold "→ Downloading $DMG_NAME…"
-curl -fL --progress-bar "${AUTH_HEADER[@]}" "$ASSET_URL" -o "$DMG_PATH"
+bold "→ Downloading ${DMG_NAME}…"
+curl -fL --progress-bar ${AUTH_HEADER[@]+"${AUTH_HEADER[@]}"} "$ASSET_URL" -o "$DMG_PATH"
 bold "→ Mounting DMG…"
 hdiutil attach "$DMG_PATH" -nobrowse -quiet -mountpoint "$MOUNT_DIR"
 if [[ ! -d "$MOUNT_DIR/${APP_NAME}.app" ]]; then
