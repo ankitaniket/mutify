@@ -1,4 +1,4 @@
-# Mutify
+# 🎙️ Mutify
 
 A tiny, always-on macOS menu bar app that mutes and unmutes your microphone
 **system-wide** with a single global keyboard shortcut.
@@ -6,11 +6,73 @@ A tiny, always-on macOS menu bar app that mutes and unmutes your microphone
 Built so you can silence yourself instantly during Zoom / Google Meet / Microsoft
 Teams calls — even while screen-sharing — without ever leaving the app you're in.
 
+![macOS](https://img.shields.io/badge/macOS-13%2B-000?style=flat-square&logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-5.9-F05138?style=flat-square&logo=swift&logoColor=white)
+![Size](https://img.shields.io/badge/Size-~700KB-2ea44f?style=flat-square)
+![Shortcut](https://img.shields.io/badge/Default%20Shortcut-%E2%8C%98%E2%87%A50-7B61FF?style=flat-square)
+
 > Default shortcut: **`⌘⇧0`** · Footprint: **~700 KB** · No Dock icon, no clutter.
 
 ---
 
-## Why?
+## 🚀 Install in one command
+
+> [!TIP]
+> **The easiest way — no Xcode, no drag-and-drop, no Gatekeeper warnings.**
+
+```bash
+gh repo clone ankitaniket/mutify /tmp/mutify-install \
+  && bash /tmp/mutify-install/install.sh
+```
+
+That's it. The mic icon will appear in your menu bar — press **`⌘⇧0`** to toggle.
+
+<details>
+<summary><b>📋 What this command does</b></summary>
+
+1. 📥 Clones this repo into `/tmp/mutify-install`
+2. 🔍 Looks up the latest release tag (`v1.0.0`, `v1.0.1`, …)
+3. 📦 Downloads the latest `.dmg` from GitHub Releases via `gh`
+4. 💿 Mounts the DMG
+5. ✋ Quits any running Mutify
+6. 📂 Copies `Mutify.app` into `/Applications`
+7. 🛡️ **Strips the macOS quarantine attribute** — this is what kills the
+   *"Apple cannot verify…"* / *"damaged"* warnings
+8. ✅ Verifies the code signature
+9. 📤 Unmounts the DMG and launches Mutify
+
+No clicks. No drag. No "damaged". No "Apple cannot verify".
+
+</details>
+
+> [!IMPORTANT]
+> **Prerequisites**
+> - macOS **13 Ventura** or later
+> - GitHub CLI installed and authenticated:
+>   ```bash
+>   brew install gh && gh auth login
+>   ```
+>
+> The `gh` requirement is because this repo is currently **private**. When it
+> goes public, the install command will simplify to:
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
+> ```
+
+### 📦 Manual install (DMG)
+
+If you'd rather drag-and-drop:
+
+1. Grab the latest **`Mutify-x.y.z.dmg`** from the [Releases page](https://github.com/ankitaniket/mutify/releases).
+2. Open it → drag **Mutify.app** → **Applications** folder.
+3. **Right-click** Mutify in Applications → **Open** → click **Open** in the
+   Gatekeeper dialog. (Or run `xattr -dr com.apple.quarantine /Applications/Mutify.app`
+   in Terminal first to skip the dialog entirely.)
+4. On first toggle, click **Allow** when macOS asks for Microphone permission.
+
+---
+
+## 💡 Why?
 
 Every video conferencing app has its own mute button, and they're all in
 different places. When you're sharing your screen — running a demo, walking
@@ -24,7 +86,7 @@ silence.
 
 ---
 
-## Features
+## ✨ Features
 
 - 🎙️ **System-wide mute** — works regardless of which app is using the mic.
 - ⌨️ **Global shortcut** — default `⌘⇧0`, fully customizable in Settings.
@@ -43,7 +105,7 @@ silence.
 
 ---
 
-## How it works
+## 🔧 How it works
 
 The interesting question is *"how do you mute the mic across every app?"*.
 The answer is **CoreAudio** — specifically, the `kAudioDevicePropertyMute`
@@ -77,7 +139,7 @@ Mutify also registers two CoreAudio property listeners:
 
 ---
 
-## Architecture
+## 🏛️ Architecture
 
 ```
 ┌──────────────────────┐    ⌘⇧0      ┌────────────────────┐
@@ -111,7 +173,7 @@ always agree — including when the mute state changes from outside the app.
 
 ---
 
-## Tech Stack
+## 🧱 Tech Stack
 
 | Layer            | Choice                                                        | Why                                                                                                |
 | ---------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -131,7 +193,7 @@ always agree — including when the mute state changes from outside the app.
 
 ---
 
-## Project structure
+## 📁 Project structure
 
 ```
 mutify/
@@ -168,29 +230,7 @@ For the per-file deep dive, see [`PLAN.md`](./PLAN.md).
 
 ---
 
-## Install (one command)
-
-> **Requires** the [GitHub CLI](https://cli.github.com/) (`brew install gh`) to be
-> installed and authenticated (`gh auth login`), since this repo is currently
-> private. The installer downloads the latest release DMG, copies the app into
-> `/Applications`, strips the macOS quarantine attribute (so you skip the
-> "Apple cannot verify…" / "damaged" warnings), and launches Mutify.
-
-```bash
-gh repo clone ankitaniket/mutify /tmp/mutify-install \
-  && bash /tmp/mutify-install/install.sh
-```
-
-That's it. The mic icon will appear in your menu bar; press `⌘⇧0` to toggle.
-
-> When the repo eventually becomes public, the one-liner will simplify to:
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
-> ```
-
----
-
-## Building from source
+## 🛠️ Building from source
 
 You need **Xcode 15+** and **Homebrew**.
 
@@ -233,7 +273,7 @@ xattr -dr com.apple.quarantine build/Build/Products/Release/Mutify.app
 
 ---
 
-## First launch
+## 🎬 First launch
 
 1. A 🎙️ mic icon appears in your menu bar. **No Dock icon.**
 2. Press `⌘⇧0` — macOS will pop a **Microphone permission** dialog. Click **Allow**.
@@ -249,7 +289,7 @@ xattr -dr com.apple.quarantine build/Build/Products/Release/Mutify.app
 
 ---
 
-## Permissions
+## 🔐 Permissions
 
 | Permission           | Required? | Why                                                                                               |
 | -------------------- | --------- | ------------------------------------------------------------------------------------------------- |
@@ -263,12 +303,12 @@ mute writes are blocked under the sandbox.
 
 ---
 
-## License
+## 📜 License
 
 Personal project. All rights reserved.
 
 ---
 
-## See also
+## 🔗 See also
 
 - [`PLAN.md`](./PLAN.md) — extended architecture & design notes.
