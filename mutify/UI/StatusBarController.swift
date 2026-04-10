@@ -55,6 +55,10 @@ final class StatusBarController {
 
         menu.addItem(.separator())
 
+        let showItem = NSMenuItem(title: "Show Mutify Window", action: #selector(showMain), keyEquivalent: "")
+        showItem.target = self
+        menu.addItem(showItem)
+
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
@@ -102,6 +106,10 @@ final class StatusBarController {
 
     @objc private func menuToggle() {
         performToggle()
+    }
+
+    @objc private func showMain() {
+        MainWindowController.shared.show()
     }
 
     @objc private func openSettings() {
