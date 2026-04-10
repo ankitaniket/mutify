@@ -79,13 +79,13 @@ final class StatusBarController {
 
     @objc private func buttonClicked(_ sender: NSStatusBarButton) {
         guard let event = NSApp.currentEvent else {
-            performToggle()
+            MainWindowController.shared.show()
             return
         }
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             showMenu()
         } else {
-            performToggle()
+            MainWindowController.shared.show()
         }
     }
 
