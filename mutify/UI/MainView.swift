@@ -9,22 +9,27 @@ struct MainView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Hero status block
-            VStack(spacing: 12) {
-                Image(systemName: mic.isMuted ? "mic.slash.fill" : "mic.fill")
-                    .font(.system(size: 56, weight: .semibold))
-                    .foregroundStyle(mic.isMuted ? Color.red : Color.green)
-                    .symbolRenderingMode(.hierarchical)
+            // Hero status block — click anywhere here to toggle mute.
+            Button(action: toggleMute) {
+                VStack(spacing: 12) {
+                    Image(systemName: mic.isMuted ? "mic.slash.fill" : "mic.fill")
+                        .font(.system(size: 56, weight: .semibold))
+                        .foregroundStyle(mic.isMuted ? Color.red : Color.green)
+                        .symbolRenderingMode(.hierarchical)
 
-                Text(mic.isMuted ? "Muted" : "Live")
-                    .font(.system(size: 22, weight: .bold))
+                    Text(mic.isMuted ? "Muted" : "Live")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.primary)
 
-                Text(mic.isMuted ? "Your microphone is currently muted." : "Your microphone is active.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    Text(mic.isMuted ? "Click to unmute" : "Click to mute")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 28)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 28)
+            .buttonStyle(.plain)
             .background(
                 LinearGradient(
                     colors: [
@@ -67,6 +72,11 @@ struct MainView: View {
         }
         .frame(width: 360)
         .fixedSize(horizontal: true, vertical: true)
+    }
+
+    private func toggleMute() {
+        let nowMuted = MicrophoneController.shared.toggle()
+        HUDController.shared.show(muted: nowMuted)
     }
 }
 
