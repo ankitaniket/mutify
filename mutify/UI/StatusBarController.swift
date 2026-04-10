@@ -33,13 +33,29 @@ final class StatusBarController {
 
     private func applyIcon(muted: Bool) {
         guard let button = statusItem.button else { return }
-        let symbol = muted ? "mic.slash.fill" : "mic.fill"
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: muted ? "Muted" : "Unmuted")?
-            .withSymbolConfiguration(config)
-        image?.isTemplate = true
-        button.image = image
-        button.contentTintColor = muted ? .systemRed : nil
+        let symbolName = muted ? "mic.slash.fill" : "mic.fill"
+        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+
+        if muted {
+            // Render the glyph in red. We must disable template mode so the color
+            // survives — template images on NSStatusItem buttons are always
+            // re-tinted with the system menu-bar foreground color.
+            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [.systemRed])
+            let merged = sizeConfig.applying(colorConfig)
+            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Muted")?
+                .withSymbolConfiguration(merged)
+            image?.isTemplate = false
+            button.image = image
+            button.contentTintColor = nil
+        } else {
+            // Live: use a template image so it adapts to light/dark menu bars.
+            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Unmuted")?
+                .withSymbolConfiguration(sizeConfig)
+            image?.isTemplate = true
+            button.image = image
+            button.contentTintColor = nil
+        }
+
         button.toolTip = muted ? "Mutify — Microphone muted" : "Mutify — Microphone live"
     }
 
