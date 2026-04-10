@@ -37,10 +37,11 @@ final class StatusBarController {
         let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
 
         if muted {
-            // Render the glyph in red. We must disable template mode so the color
-            // survives — template images on NSStatusItem buttons are always
-            // re-tinted with the system menu-bar foreground color.
-            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [.systemRed])
+            // Render the glyph in a muted red. We must disable template mode so
+            // the color survives — template images on NSStatusItem buttons are
+            // always re-tinted with the system menu-bar foreground color.
+            let mutedRed = NSColor(calibratedRed: 0.78, green: 0.24, blue: 0.24, alpha: 1.0)
+            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [mutedRed])
             let merged = sizeConfig.applying(colorConfig)
             let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Muted")?
                 .withSymbolConfiguration(merged)
