@@ -21,8 +21,7 @@ Teams calls — even while screen-sharing — without ever leaving the app you'r
 > **The easiest way — no Xcode, no drag-and-drop, no Gatekeeper warnings.**
 
 ```bash
-gh repo clone ankitaniket/mutify /tmp/mutify-install \
-  && bash /tmp/mutify-install/install.sh
+curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
 ```
 
 That's it. The mic icon will appear in your menu bar — press **`⌘⇧0`** to toggle.
@@ -30,34 +29,23 @@ That's it. The mic icon will appear in your menu bar — press **`⌘⇧0`** to 
 <details>
 <summary><b>📋 What this command does</b></summary>
 
-1. 📥 Clones this repo into `/tmp/mutify-install`
-2. 🔍 Looks up the latest release tag (`v1.0.0`, `v1.0.1`, …)
-3. 📦 Downloads the latest `.dmg` from GitHub Releases via `gh`
-4. 💿 Mounts the DMG
-5. ✋ Quits any running Mutify
-6. 📂 Copies `Mutify.app` into `/Applications`
-7. 🛡️ **Strips the macOS quarantine attribute** — this is what kills the
+1. 🔍 Looks up the latest release tag (`v1.0.0`, `v1.0.1`, …)
+2. 📦 Downloads the latest `.dmg` from GitHub Releases
+3. 💿 Mounts the DMG
+4. ✋ Quits any running Mutify
+5. 📂 Copies `Mutify.app` into `/Applications`
+6. 🛡️ **Strips the macOS quarantine attribute** — this is what kills the
    *"Apple cannot verify…"* / *"damaged"* warnings
-8. ✅ Verifies the code signature
-9. 📤 Unmounts the DMG and launches Mutify
+7. ✅ Verifies the code signature
+8. 📤 Unmounts the DMG and launches Mutify
 
 No clicks. No drag. No "damaged". No "Apple cannot verify".
 
 </details>
 
 > [!IMPORTANT]
-> **Prerequisites**
-> - macOS **13 Ventura** or later
-> - GitHub CLI installed and authenticated:
->   ```bash
->   brew install gh && gh auth login
->   ```
->
-> The `gh` requirement is because this repo is currently **private**. When it
-> goes public, the install command will simplify to:
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
-> ```
+> **Requires macOS 13 Ventura or later.** Nothing else — `curl`, `hdiutil`, and
+> `xattr` are all built into macOS.
 
 ### 📦 Manual install (DMG)
 

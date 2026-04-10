@@ -2,27 +2,22 @@
 #
 # Mutify one-line installer.
 #
-# Usage (the repo is private, so we go through the gh CLI for auth):
-#
-#   gh auth login   # one-time, if not already
-#   gh api repos/ankitaniket/mutify/contents/install.sh \
-#     --jq .content | base64 -d | bash
-#
-# Or, simpler — clone-then-run:
-#
-#   gh repo clone ankitaniket/mutify /tmp/mutify-install \
-#     && bash /tmp/mutify-install/install.sh
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/ankitaniket/mutify/main/install.sh | bash
 #
 # What it does:
-#   1. Downloads the latest Mutify release DMG from GitHub (via gh CLI)
-#   2. Mounts it
-#   3. Copies Mutify.app into /Applications
-#   4. Strips the quarantine attribute (so macOS Gatekeeper does NOT show
+#   1. Looks up the latest Mutify release on GitHub
+#   2. Downloads the .dmg
+#   3. Mounts it
+#   4. Quits any running Mutify
+#   5. Copies Mutify.app into /Applications
+#   6. Strips the macOS quarantine attribute (so Gatekeeper does NOT show
 #      the "Apple cannot verify this app" / "damaged" warning)
-#   5. Unmounts the DMG
-#   6. Launches Mutify
+#   7. Verifies the code signature
+#   8. Unmounts the DMG
+#   9. Launches Mutify
 #
-# Requires: macOS 13+, gh CLI (authenticated), hdiutil (built-in).
+# Requires: macOS 13+ and the standard `curl`, `hdiutil`, `xattr` (all built-in).
 #
 
 set -euo pipefail
@@ -49,21 +44,12 @@ if (( MACOS_MAJOR < 13 )); then
   exit 1
 fi
 
-for cmd in curl hdiutil xattr osascript pgrep gh; do
+for cmd in curl hdiutil xattr osascript pgrep; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     red "✗ Required command not found: $cmd"
-    if [[ "$cmd" == "gh" ]]; then
-      red "  Install GitHub CLI:  brew install gh   (then: gh auth login)"
-    fi
     exit 1
   fi
 done
-
-# The repo is private, so we need an authenticated gh session to fetch the asset.
-if ! gh auth status >/dev/null 2>&1; then
-  red "✗ GitHub CLI is not authenticated. Run:  gh auth login"
-  exit 1
-fi
 
 # ─── temp workspace ───────────────────────────────────────────────────────────
 
@@ -79,32 +65,45 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# ─── fetch + download latest release DMG via gh CLI ──────────────────────────
+# ─── auth header (only used when GH_TOKEN/GITHUB_TOKEN is set) ────────────────
+
+AUTH_HEADER=()
+if [[ -n "${GH_TOKEN:-}" ]]; then
+  AUTH_HEADER=(-H "Authorization: token ${GH_TOKEN}")
+elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  AUTH_HEADER=(-H "Authorization: token ${GITHUB_TOKEN}")
+fi
+
+# ─── fetch latest release asset URL via the GitHub API ───────────────────────
 
 bold "→ Looking up the latest Mutify release on github.com/${REPO}…"
 
-LATEST_TAG=$(gh release view --repo "$REPO" --json tagName --jq .tagName 2>/dev/null || true)
-if [[ -z "${LATEST_TAG:-}" ]]; then
-  red "✗ Could not find any releases on ${REPO}."
+API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+RELEASE_JSON=$(curl -fsSL "${AUTH_HEADER[@]}" "$API_URL" 2>/dev/null) || {
+  red "✗ Could not reach the GitHub API at $API_URL"
+  exit 1
+}
+
+ASSET_URL=$(printf '%s' "$RELEASE_JSON" \
+  | grep -o '"browser_download_url":[[:space:]]*"[^"]*\.dmg"' \
+  | head -1 \
+  | sed -E 's/.*"(https[^"]+)".*/\1/')
+
+if [[ -z "${ASSET_URL:-}" ]]; then
+  red "✗ Could not find a .dmg asset in the latest release of ${REPO}."
   red "  Check https://github.com/${REPO}/releases"
   exit 1
 fi
-dim "  Latest release: $LATEST_TAG"
 
-bold "→ Downloading Mutify DMG…"
-gh release download "$LATEST_TAG" \
-  --repo "$REPO" \
-  --pattern "*.dmg" \
-  --dir "$TMP" \
-  --clobber
+DMG_NAME=$(basename "$ASSET_URL")
+DMG_PATH="$TMP/$DMG_NAME"
 
-DMG_PATH=$(ls "$TMP"/*.dmg 2>/dev/null | head -1)
-if [[ -z "${DMG_PATH:-}" || ! -f "$DMG_PATH" ]]; then
-  red "✗ DMG download failed."
-  exit 1
-fi
-DMG_NAME=$(basename "$DMG_PATH")
-dim "  Downloaded: $DMG_NAME"
+dim "  Found: $DMG_NAME"
+
+# ─── download ─────────────────────────────────────────────────────────────────
+
+bold "→ Downloading $DMG_NAME…"
+curl -fL --progress-bar "${AUTH_HEADER[@]}" "$ASSET_URL" -o "$DMG_PATH"
 
 # ─── mount ────────────────────────────────────────────────────────────────────
 
@@ -135,13 +134,12 @@ if [[ -e "$DEST" ]]; then
   rm -rf "$DEST"
 fi
 
-# /Applications usually requires no sudo when owned by the current user.
 if ! cp -R "$MOUNT_DIR/${APP_NAME}.app" "$DEST" 2>/dev/null; then
   bold "  /Applications needs admin rights — you may be prompted for your password."
   sudo cp -R "$MOUNT_DIR/${APP_NAME}.app" "$DEST"
 fi
 
-# ─── strip quarantine — this is the magic that bypasses Gatekeeper ───────────
+# ─── strip quarantine — bypasses Gatekeeper "damaged" warning ────────────────
 
 bold "→ Removing quarantine attribute (bypasses Gatekeeper warning)…"
 xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || \
