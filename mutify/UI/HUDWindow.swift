@@ -36,24 +36,19 @@ struct HUDContentView: View {
     let muted: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: muted ? "mic.slash.fill" : "mic.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(muted ? Color.red : Color.green)
-            Text(muted ? "Muted" : "Unmuted")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.white)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-        )
+        Text(muted ? "Muted" : "Unmuted")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+            )
     }
 }
 
