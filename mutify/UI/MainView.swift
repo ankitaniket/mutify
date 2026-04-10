@@ -53,19 +53,31 @@ struct MainView: View {
                     KeyboardShortcuts.Recorder(for: .toggleMute)
                 }
 
-                Toggle(isOn: $launchAtLogin) {
-                    HStack {
-                        Image(systemName: "power")
-                            .foregroundStyle(.secondary)
-                        Text("Launch at login")
+                HStack(spacing: 12) {
+                    Image(systemName: "power")
+                        .foregroundStyle(.secondary)
+                    Text("Launch at login")
+                    Spacer()
+                    Toggle("", isOn: $launchAtLogin)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .onChange(of: launchAtLogin) { newValue in
+                            LaunchAtLogin.isEnabled = newValue
+                            DispatchQueue.main.async {
+                                launchAtLogin = LaunchAtLogin.isEnabled
+                            }
+                        }
+                    Button(action: openGitHub) {
+                        Image("GitHubMark")
+                            .resizable()
+                            .renderingMode(.template)
+                            .interpolation(.high)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 18, height: 18)
+                            .foregroundStyle(.primary)
                     }
-                }
-                .toggleStyle(.switch)
-                .onChange(of: launchAtLogin) { newValue in
-                    LaunchAtLogin.isEnabled = newValue
-                    DispatchQueue.main.async {
-                        launchAtLogin = LaunchAtLogin.isEnabled
-                    }
+                    .buttonStyle(.plain)
+                    .help("View source on GitHub")
                 }
             }
             .padding(20)
@@ -77,6 +89,12 @@ struct MainView: View {
     private func toggleMute() {
         let nowMuted = MicrophoneController.shared.toggle()
         HUDController.shared.show(muted: nowMuted)
+    }
+
+    private func openGitHub() {
+        if let url = URL(string: "https://github.com/ankitaniket/mutify") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 

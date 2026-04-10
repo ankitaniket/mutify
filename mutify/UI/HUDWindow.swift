@@ -1,26 +1,42 @@
 import AppKit
 import SwiftUI
 
-/// Borderless, click-through floating window used as a toast HUD.
+/// Borderless, click-through floating panel used as a toast HUD.
 ///
-/// - Floats above full-screen apps via `.statusBar` window level.
-/// - Excluded from screen capture (`sharingType = .none`) so meeting participants
-///   don't see the toast during a Zoom/Meet/Teams screen share — only the user does.
-final class HUDWindow: NSWindow {
+/// Implemented as an `NSPanel` with the `.nonactivatingPanel` style mask — the
+/// same approach the system volume / brightness HUDs use. That combo guarantees:
+///   • The window floats above every other app, including full-screen apps.
+///   • It does NOT steal focus from whatever the user is typing into.
+///   • It joins every Space (so it appears regardless of the active Space).
+///
+/// `sharingType = .none` keeps it out of screen recordings / Zoom screen-shares,
+/// so meeting participants never see the "Muted" / "Unmuted" toast.
+final class HUDWindow: NSPanel {
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
-            styleMask: [.borderless],
+            styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: false
         )
+        isFloatingPanel = true
+        becomesKeyOnlyIfNeeded = true
+        worksWhenModal = true
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true
         ignoresMouseEvents = true
-        level = .statusBar
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        sharingType = .none           // Hidden from screen recordings / sharing.
+        // .popUpMenu (101) sits above .statusBar (25) and floats over browsers,
+        // terminals, full-screen apps, etc.
+        level = .popUpMenu
+        collectionBehavior = [
+            .canJoinAllSpaces,
+            .fullScreenAuxiliary,
+            .stationary,
+            .ignoresCycle,
+            .transient,
+        ]
+        sharingType = .none
         isReleasedWhenClosed = false
         isMovableByWindowBackground = false
         animationBehavior = .none
