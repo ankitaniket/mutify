@@ -2,7 +2,7 @@ import SwiftUI
 import KeyboardShortcuts
 
 /// The simple main window — shows current mute state, the active shortcut,
-/// launch-at-login toggle, and a Quit button.
+/// and the launch-at-login toggle.
 struct MainView: View {
     @ObservedObject private var mic = MicrophoneController.shared
     @State private var launchAtLogin: Bool = LaunchAtLogin.isEnabled
@@ -64,29 +64,6 @@ struct MainView: View {
                 }
             }
             .padding(20)
-
-            Divider()
-
-            // Action row
-            HStack {
-                Button {
-                    let nowMuted = MicrophoneController.shared.toggle()
-                    HUDController.shared.show(muted: nowMuted)
-                } label: {
-                    Label(mic.isMuted ? "Unmute" : "Mute", systemImage: mic.isMuted ? "mic.fill" : "mic.slash.fill")
-                        .frame(minWidth: 90)
-                }
-                .keyboardShortcut(.defaultAction)
-
-                Spacer()
-
-                Button("Quit Mutify") {
-                    NSApp.terminate(nil)
-                }
-                .keyboardShortcut("q", modifiers: [.command])
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
         }
         .frame(width: 360)
         .fixedSize(horizontal: true, vertical: true)
