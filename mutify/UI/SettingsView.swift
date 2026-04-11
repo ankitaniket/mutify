@@ -275,15 +275,6 @@ struct SettingsView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 6) {
-                sectionHeader("Accessibility")
-                card {
-                    row("Speak mute changes aloud") {
-                        Toggle("", isOn: $prefs.voiceOverAnnouncements)
-                            .labelsHidden().toggleStyle(.switch)
-                    }
-                }
-            }
-            VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("Updates")
                 card {
                     row("Check for the latest version") {

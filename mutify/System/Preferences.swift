@@ -59,12 +59,6 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(muteOnFocus, forKey: Keys.muteOnFocus) }
     }
 
-    // MARK: - Accessibility
-
-    @Published var voiceOverAnnouncements: Bool {
-        didSet { defaults.set(voiceOverAnnouncements, forKey: Keys.voiceOverAnnouncements) }
-    }
-
     // MARK: - Stats (read/write through MuteStats)
 
     private init() {
@@ -74,7 +68,6 @@ final class Preferences: ObservableObject {
             Keys.iconStyle: IconStyle.template.rawValue,
             Keys.showMutedLabel: false,
             Keys.muteOnFocus: false,
-            Keys.voiceOverAnnouncements: false,
         ])
 
         showMenuBarIcon = defaults.bool(forKey: Keys.showMenuBarIcon)
@@ -83,7 +76,6 @@ final class Preferences: ObservableObject {
         showMutedLabel = defaults.bool(forKey: Keys.showMutedLabel)
         pinnedDeviceUID = defaults.string(forKey: Keys.pinnedDeviceUID)
         muteOnFocus = defaults.bool(forKey: Keys.muteOnFocus)
-        voiceOverAnnouncements = defaults.bool(forKey: Keys.voiceOverAnnouncements)
     }
 
     private enum Keys {
@@ -93,6 +85,5 @@ final class Preferences: ObservableObject {
         static let showMutedLabel = "pref.showMutedLabel"
         static let pinnedDeviceUID = "pref.pinnedDeviceUID"
         static let muteOnFocus = "pref.muteOnFocus"
-        static let voiceOverAnnouncements = "pref.voiceOverAnnouncements"
     }
 }

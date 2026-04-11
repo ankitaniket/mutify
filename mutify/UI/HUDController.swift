@@ -1,5 +1,4 @@
 import AppKit
-import AVFoundation
 import SwiftUI
 
 /// Owns the toast HUD that briefly flashes "Muted" / "Unmuted" at the
@@ -32,7 +31,6 @@ final class HUDController {
         DispatchQueue.main.async { [weak self] in
             self?.presentToast(muted: muted)
         }
-        announce(muted ? "Microphone muted" : "Microphone live")
     }
 
     private func presentToast(muted: Bool) {
@@ -77,45 +75,5 @@ final class HUDController {
             y: frame.minY + edgeMargin
         )
         window.setFrame(NSRect(origin: origin, size: size), display: true)
-    }
-
-    // MARK: - VoiceOver
-
-    /// Speech synthesizer used as a fallback when VoiceOver isn't running.
-    /// `.accessory`-style menu bar apps without an open window can't reliably
-    /// post AX announcements (VoiceOver doesn't observe focus events for them),
-    /// so we speak the state directly so the toggle still does something useful.
-    private let speechSynth = AVSpeechSynthesizer()
-
-    private func announce(_ text: String) {
-        guard Preferences.shared.voiceOverAnnouncements else { return }
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-
-            let voiceOverRunning = UserDefaults(suiteName: "com.apple.universalaccess")?
-                .bool(forKey: "voiceOverOnOffKey") ?? false
-
-            if voiceOverRunning {
-                // VoiceOver is active — let it speak via AX. Post from NSApp
-                // which is always a valid accessibility element regardless of
-                // whether we have a key window. (Earlier code passed the toast
-                // panel, which can't become key, so VO dropped the post.)
-                NSAccessibility.post(
-                    element: NSApp as Any,
-                    notification: .announcementRequested,
-                    userInfo: [
-                        .announcement: text,
-                        .priority: NSAccessibilityPriorityLevel.high.rawValue,
-                    ]
-                )
-            } else {
-                // No VoiceOver — speak directly so the user still hears the
-                // mute change confirmation they opted into.
-                let utterance = AVSpeechUtterance(string: text)
-                utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-                self.speechSynth.stopSpeaking(at: .immediate)
-                self.speechSynth.speak(utterance)
-            }
-        }
     }
 }
