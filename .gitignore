@@ -17,5 +17,11 @@ Mutify.xcodeproj/
 # Distribution artifacts
 dist/
 
+# Sparkle private keys — must NEVER be committed
+secrets/
+*sparkle_private*
+*ed25519*.key
+*.private.key
+
 # macOS
 .DS_Store

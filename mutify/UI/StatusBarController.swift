@@ -216,15 +216,9 @@ final class StatusBarController {
     // MARK: - Actions
 
     @objc private func buttonClicked(_ sender: NSStatusBarButton) {
-        guard let event = NSApp.currentEvent else {
-            MainWindowController.shared.show()
-            return
-        }
-        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
-            showMenu()
-        } else {
-            MainWindowController.shared.show()
-        }
+        // Both left- and right-click open the menu. The Main window is reachable
+        // from the "Show Mutify Window" menu item.
+        showMenu()
     }
 
     private func showMenu() {

@@ -74,6 +74,16 @@ struct MainView: View {
                                 launchAtLogin = LaunchAtLogin.isEnabled
                             }
                         }
+                    Button(action: openSettings) {
+                        Image(systemName: "gearshape.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 18, height: 18)
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open Mutify Settings")
+
                     Button(action: openGitHub) {
                         Image("GitHubMark")
                             .resizable()
@@ -114,6 +124,10 @@ struct MainView: View {
         if let url = URL(string: "https://github.com/ankitaniket/mutify") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    private func openSettings() {
+        SettingsWindowController.shared.show()
     }
 }
 

@@ -47,6 +47,7 @@ targets:
         SUFeedURL: "https://raw.githubusercontent.com/ankitaniket/mutify/main/appcast.xml"
         SUEnableInstallerLauncherService: true
         SUEnableAutomaticChecks: false
+        SUPublicEDKey: "pzT1bVcL3DjayLr8QhS+3fA10zLgxkRPJvDLm1g+nXw="
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ankitaniket.mutify
