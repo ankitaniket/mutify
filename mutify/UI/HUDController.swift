@@ -13,11 +13,6 @@ final class HUDController {
     private var dismissWorkItem: DispatchWorkItem?
     private let toastSize = NSSize(width: 140, height: 48)
 
-    // Label (persistent) HUD
-    private let labelWindow: HUDWindow
-    private let labelHost: NSHostingView<HUDLabelView>
-    private let labelSize = NSSize(width: 220, height: 36)
-
     private let edgeMargin: CGFloat = 28
 
     private init() {
@@ -27,13 +22,6 @@ final class HUDController {
         toastHost.frame = toastRect
         toastWindow.contentView = toastHost
         toastWindow.alphaValue = 0
-
-        let labelRect = NSRect(origin: .zero, size: labelSize)
-        labelWindow = HUDWindow(contentRect: labelRect)
-        labelHost = NSHostingView(rootView: HUDLabelView(text: "You're muted"))
-        labelHost.frame = labelRect
-        labelWindow.contentView = labelHost
-        labelWindow.alphaValue = 0
     }
 
     // MARK: - Toast (transient)
@@ -48,7 +36,7 @@ final class HUDController {
 
     private func presentToast(muted: Bool) {
         toastHost.rootView = HUDContentView(muted: muted)
-        repositionToActiveScreen(window: toastWindow, size: toastSize, raise: 0)
+        repositionToActiveScreen(window: toastWindow, size: toastSize)
 
         dismissWorkItem?.cancel()
         if !toastWindow.isVisible {
@@ -78,52 +66,14 @@ final class HUDController {
         }
     }
 
-    // MARK: - Label (persistent)
-
-    /// Show a persistent "you're muted" indicator. Caller must dismiss with
-    /// `hideLabel()` when the user stops speaking or unmutes.
-    func showLabel(text: String) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.labelHost.rootView = HUDLabelView(text: text)
-            self.repositionToActiveScreen(
-                window: self.labelWindow,
-                size: self.labelSize,
-                raise: self.toastSize.height + 12
-            )
-            if !self.labelWindow.isVisible {
-                self.labelWindow.orderFrontRegardless()
-            }
-            let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = reduceMotion ? 0 : 0.15
-                self.labelWindow.animator().alphaValue = 1.0
-            }
-        }
-        announce(text)
-    }
-
-    func hideLabel() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = reduceMotion ? 0 : 0.20
-                self.labelWindow.animator().alphaValue = 0.0
-            } completionHandler: {
-                self.labelWindow.orderOut(nil)
-            }
-        }
-    }
-
     // MARK: - Layout
 
-    private func repositionToActiveScreen(window: NSWindow, size: NSSize, raise: CGFloat) {
+    private func repositionToActiveScreen(window: NSWindow, size: NSSize) {
         let screen = NSScreen.main ?? NSScreen.screens.first
         guard let frame = screen?.visibleFrame else { return }
         let origin = NSPoint(
             x: frame.maxX - size.width - edgeMargin,
-            y: frame.minY + edgeMargin + raise
+            y: frame.minY + edgeMargin
         )
         window.setFrame(NSRect(origin: origin, size: size), display: true)
     }

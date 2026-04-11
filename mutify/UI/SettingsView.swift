@@ -107,16 +107,6 @@ struct SettingsView: View {
                 }
                 Button("Refresh device list") { devices = AudioDevices.listInputs() }
             } header: { Text("Microphone") }
-
-            Section {
-                Toggle("Detect speaking while muted", isOn: $prefs.speakingDetectionEnabled)
-            } header: {
-                Text("Voice activity")
-            } footer: {
-                Text("When enabled, Mutify shows a small label if you start talking while you're muted. Audio is analyzed locally and never transmitted.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
     }

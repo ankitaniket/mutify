@@ -53,12 +53,6 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(pinnedDeviceUID, forKey: Keys.pinnedDeviceUID) }
     }
 
-    // MARK: - Speaking-while-muted detection
-
-    @Published var speakingDetectionEnabled: Bool {
-        didSet { defaults.set(speakingDetectionEnabled, forKey: Keys.speakingDetectionEnabled) }
-    }
-
     // MARK: - Focus mode integration
 
     @Published var muteOnFocus: Bool {
@@ -79,7 +73,6 @@ final class Preferences: ObservableObject {
             Keys.showDockIcon: false,
             Keys.iconStyle: IconStyle.template.rawValue,
             Keys.showMutedLabel: false,
-            Keys.speakingDetectionEnabled: false,
             Keys.muteOnFocus: false,
             Keys.voiceOverAnnouncements: false,
         ])
@@ -89,7 +82,6 @@ final class Preferences: ObservableObject {
         iconStyle = IconStyle(rawValue: defaults.string(forKey: Keys.iconStyle) ?? "") ?? .template
         showMutedLabel = defaults.bool(forKey: Keys.showMutedLabel)
         pinnedDeviceUID = defaults.string(forKey: Keys.pinnedDeviceUID)
-        speakingDetectionEnabled = defaults.bool(forKey: Keys.speakingDetectionEnabled)
         muteOnFocus = defaults.bool(forKey: Keys.muteOnFocus)
         voiceOverAnnouncements = defaults.bool(forKey: Keys.voiceOverAnnouncements)
     }
@@ -100,7 +92,6 @@ final class Preferences: ObservableObject {
         static let iconStyle = "pref.iconStyle"
         static let showMutedLabel = "pref.showMutedLabel"
         static let pinnedDeviceUID = "pref.pinnedDeviceUID"
-        static let speakingDetectionEnabled = "pref.speakingDetectionEnabled"
         static let muteOnFocus = "pref.muteOnFocus"
         static let voiceOverAnnouncements = "pref.voiceOverAnnouncements"
     }

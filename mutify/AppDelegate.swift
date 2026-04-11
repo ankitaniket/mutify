@@ -24,13 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Optional features.
         FocusObserver.shared.start()
-        SpeechWhileMutedDetector.shared.onSpeakingDetected = {
-            HUDController.shared.showLabel(text: "You're muted")
-        }
-        SpeechWhileMutedDetector.shared.onSilenceResumed = {
-            HUDController.shared.hideLabel()
-        }
-        SpeechWhileMutedDetector.shared.start()
 
         // Initialize Sparkle (kicks off background update checks per its prefs).
         _ = UpdaterController.shared
