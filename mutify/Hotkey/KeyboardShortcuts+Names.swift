@@ -7,4 +7,10 @@ extension KeyboardShortcuts.Name {
         "toggleMute",
         default: .init(.zero, modifiers: [.command, .shift])
     )
+
+    /// Optional: explicit "force mute" shortcut (no default).
+    static let forceMute = Self("forceMute")
+
+    /// Optional: explicit "force unmute" shortcut (no default).
+    static let forceUnmute = Self("forceUnmute")
 }

@@ -68,6 +68,36 @@ struct HUDContentView: View {
     }
 }
 
+/// Persistent "label" HUD used for the opt-in speaking-while-muted indicator.
+/// Smaller, warning-tinted, sticks around until the controller dismisses it.
+struct HUDLabelView: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "mic.slash.fill")
+                .foregroundStyle(.white)
+                .font(.system(size: 12, weight: .semibold))
+            Text(text)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            ZStack {
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                Color(red: 0.78, green: 0.24, blue: 0.24).opacity(0.85)
+            }
+            .clipShape(Capsule(style: .continuous))
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+        )
+    }
+}
+
 /// Bridge to NSVisualEffectView for the blurred toast background.
 struct VisualEffectBlur: NSViewRepresentable {
     var material: NSVisualEffectView.Material

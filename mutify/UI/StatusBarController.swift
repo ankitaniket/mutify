@@ -1,25 +1,21 @@
 import AppKit
 import Combine
 
-/// Always-present menu bar item that mirrors mute state and exposes the menu.
+/// Menu bar item that mirrors mute state and exposes the menu.
+///
+/// Visibility, icon style, and "MUTED" label are all driven by `Preferences`.
 final class StatusBarController {
-    private let statusItem: NSStatusItem
+    private var statusItem: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
+    private var cachedMenu: NSMenu?
 
     init() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.behavior = []  // Always visible; not user-removable on click.
-
-        if let button = statusItem.button {
-            button.target = self
-            button.action = #selector(buttonClicked(_:))
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-            button.imagePosition = .imageOnly
+        // Show on launch only if the user wants the menu bar icon visible.
+        if Preferences.shared.showMenuBarIcon {
+            install()
         }
 
-        rebuildMenu(muted: false)
-        applyIcon(muted: false)
-
+        // React to mute state changes.
         MicrophoneController.shared.$isMuted
             .receive(on: DispatchQueue.main)
             .sink { [weak self] muted in
@@ -27,34 +23,114 @@ final class StatusBarController {
                 self?.rebuildMenu(muted: muted)
             }
             .store(in: &cancellables)
+
+        // React to active device changes (refresh menu).
+        MicrophoneController.shared.$activeDeviceName
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.rebuildMenu(muted: MicrophoneController.shared.isMuted)
+            }
+            .store(in: &cancellables)
+
+        // React to preference changes.
+        Preferences.shared.$showMenuBarIcon
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] visible in
+                if visible { self?.install() } else { self?.uninstall() }
+            }
+            .store(in: &cancellables)
+
+        Preferences.shared.$iconStyle
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyIcon(muted: MicrophoneController.shared.isMuted)
+            }
+            .store(in: &cancellables)
+
+        Preferences.shared.$showMutedLabel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyIcon(muted: MicrophoneController.shared.isMuted)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Install / uninstall
+
+    private func install() {
+        guard statusItem == nil else { return }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.behavior = []
+        if let button = item.button {
+            button.target = self
+            button.action = #selector(buttonClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.imagePosition = .imageLeft
+        }
+        statusItem = item
+        rebuildMenu(muted: MicrophoneController.shared.isMuted)
+        applyIcon(muted: MicrophoneController.shared.isMuted)
+    }
+
+    private func uninstall() {
+        guard let item = statusItem else { return }
+        NSStatusBar.system.removeStatusItem(item)
+        statusItem = nil
     }
 
     // MARK: - Icon
 
     private func applyIcon(muted: Bool) {
-        guard let button = statusItem.button else { return }
+        guard let item = statusItem, let button = item.button else { return }
         let symbolName = muted ? "mic.slash.fill" : "mic.fill"
         let sizeConfig = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        let style = Preferences.shared.iconStyle
 
-        if muted {
-            // Render the glyph in a muted red. We must disable template mode so
-            // the color survives — template images on NSStatusItem buttons are
-            // always re-tinted with the system menu-bar foreground color.
-            let mutedRed = NSColor(calibratedRed: 0.78, green: 0.24, blue: 0.24, alpha: 1.0)
-            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [mutedRed])
+        switch style {
+        case .template:
+            if muted {
+                let mutedRed = NSColor(calibratedRed: 0.78, green: 0.24, blue: 0.24, alpha: 1.0)
+                let colorConfig = NSImage.SymbolConfiguration(paletteColors: [mutedRed])
+                let merged = sizeConfig.applying(colorConfig)
+                let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Muted")?
+                    .withSymbolConfiguration(merged)
+                image?.isTemplate = false
+                button.image = image
+            } else {
+                let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Unmuted")?
+                    .withSymbolConfiguration(sizeConfig)
+                image?.isTemplate = true
+                button.image = image
+            }
+        case .colorful:
+            let color = muted
+                ? NSColor(calibratedRed: 0.85, green: 0.20, blue: 0.20, alpha: 1.0)
+                : NSColor(calibratedRed: 0.20, green: 0.70, blue: 0.30, alpha: 1.0)
+            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [color])
             let merged = sizeConfig.applying(colorConfig)
-            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Muted")?
+            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: muted ? "Muted" : "Unmuted")?
                 .withSymbolConfiguration(merged)
             image?.isTemplate = false
             button.image = image
-            button.contentTintColor = nil
-        } else {
-            // Live: use a template image so it adapts to light/dark menu bars.
-            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Unmuted")?
+        case .monochrome:
+            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: muted ? "Muted" : "Unmuted")?
                 .withSymbolConfiguration(sizeConfig)
             image?.isTemplate = true
             button.image = image
-            button.contentTintColor = nil
+        }
+        button.contentTintColor = nil
+
+        // Optional "MUTED" label next to the icon.
+        if Preferences.shared.showMutedLabel && muted {
+            button.title = " MUTED"
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+                .foregroundColor: NSColor(calibratedRed: 0.85, green: 0.20, blue: 0.20, alpha: 1.0),
+            ]
+            button.attributedTitle = NSAttributedString(string: " MUTED", attributes: attrs)
+        } else {
+            button.title = ""
+            button.attributedTitle = NSAttributedString(string: "")
         }
 
         button.toolTip = muted ? "Mutify — Microphone muted" : "Mutify — Microphone live"
@@ -70,6 +146,16 @@ final class StatusBarController {
         toggleItem.target = self
         menu.addItem(toggleItem)
 
+        // Active device line + device picker submenu.
+        if let name = MicrophoneController.shared.activeDeviceName {
+            let active = NSMenuItem(title: "Active: \(name)", action: nil, keyEquivalent: "")
+            active.isEnabled = false
+            menu.addItem(active)
+        }
+        let deviceItem = NSMenuItem(title: "Input Device", action: nil, keyEquivalent: "")
+        deviceItem.submenu = buildDeviceSubmenu()
+        menu.addItem(deviceItem)
+
         menu.addItem(.separator())
 
         let showItem = NSMenuItem(title: "Show Mutify Window", action: #selector(showMain), keyEquivalent: "")
@@ -80,17 +166,52 @@ final class StatusBarController {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        let updateItem = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(UpdaterController.checkForUpdates(_:)),
+            keyEquivalent: ""
+        )
+        updateItem.target = UpdaterController.shared
+        menu.addItem(updateItem)
+
         menu.addItem(.separator())
 
         let quitItem = NSMenuItem(title: "Quit Mutify", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
-        statusItem.menu = nil  // We attach on right-click only; left-click handled below.
+        statusItem?.menu = nil
         cachedMenu = menu
     }
 
-    private var cachedMenu: NSMenu?
+    private func buildDeviceSubmenu() -> NSMenu {
+        let submenu = NSMenu()
+        let pinned = Preferences.shared.pinnedDeviceUID
+
+        let follow = NSMenuItem(
+            title: "Follow System Default",
+            action: #selector(pickFollowDefault),
+            keyEquivalent: ""
+        )
+        follow.target = self
+        follow.state = (pinned == nil) ? .on : .off
+        submenu.addItem(follow)
+
+        submenu.addItem(.separator())
+
+        for device in AudioDevices.listInputs() {
+            let item = NSMenuItem(
+                title: device.name + (device.supportsMute ? "" : "  (no mute)"),
+                action: #selector(pickDevice(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = device.uid
+            item.state = (pinned == device.uid) ? .on : .off
+            submenu.addItem(item)
+        }
+        return submenu
+    }
 
     // MARK: - Actions
 
@@ -107,12 +228,11 @@ final class StatusBarController {
     }
 
     private func showMenu() {
-        guard let menu = cachedMenu else { return }
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil)
-        // Detach so the next left-click toggles instead of opening the menu.
+        guard let menu = cachedMenu, let item = statusItem else { return }
+        item.menu = menu
+        item.button?.performClick(nil)
         DispatchQueue.main.async { [weak self] in
-            self?.statusItem.menu = nil
+            self?.statusItem?.menu = nil
         }
     }
 
@@ -130,12 +250,16 @@ final class StatusBarController {
     }
 
     @objc private func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14.0, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        }
+        SettingsWindowController.shared.show()
+    }
+
+    @objc private func pickFollowDefault() {
+        Preferences.shared.pinnedDeviceUID = nil
+    }
+
+    @objc private func pickDevice(_ sender: NSMenuItem) {
+        guard let uid = sender.representedObject as? String else { return }
+        Preferences.shared.pinnedDeviceUID = uid
     }
 
     @objc private func quit() {

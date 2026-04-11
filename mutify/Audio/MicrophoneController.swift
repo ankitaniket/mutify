@@ -2,23 +2,39 @@ import Foundation
 import CoreAudio
 import Combine
 
-/// Controls the system default input device's mute state via CoreAudio.
+/// Controls the active input device's mute state via CoreAudio.
 ///
 /// Setting `kAudioDevicePropertyMute` on the input scope mutes the device at the
-/// OS level, which means every running app (Zoom, Meet, Teams, browsers, etc.)
-/// instantly sees silence. No per-app integration required.
+/// OS level, so every running app (Zoom, Meet, Teams, browsers, etc.) instantly
+/// sees silence. No per-app integration required.
+///
+/// The active device is either the system default input (when the user hasn't
+/// pinned anything) or the device whose UID matches `Preferences.pinnedDeviceUID`.
+/// Per-device mute state is remembered in `UserDefaults` so re-plugging a USB
+/// mic restores the last intended state.
 final class MicrophoneController: ObservableObject {
     static let shared = MicrophoneController()
 
     @Published private(set) var isMuted: Bool = false
     @Published private(set) var hasInputDevice: Bool = false
+    @Published private(set) var activeDeviceUID: String?
+    @Published private(set) var activeDeviceName: String?
 
     private var deviceID: AudioDeviceID = AudioDeviceID(kAudioObjectUnknown)
     private var muteListener: AudioObjectPropertyListenerBlock?
+    private var prefsCancellable: AnyCancellable?
+
+    private let perDeviceMuteKey = "mic.perDeviceMute"
 
     private init() {
         installDefaultDeviceListener()
-        rebindToDefaultDevice()
+        rebindActiveDevice()
+
+        // React to user pinning a different device.
+        prefsCancellable = Preferences.shared.$pinnedDeviceUID
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.rebindActiveDevice() }
     }
 
     // MARK: - Public API
@@ -33,7 +49,29 @@ final class MicrophoneController: ObservableObject {
     func setMuted(_ value: Bool) {
         guard hasInputDevice else { return }
         guard writeMute(deviceID, muted: value) else { return }
+        rememberMuteState(value, for: activeDeviceUID)
         DispatchQueue.main.async { self.isMuted = value }
+    }
+
+    /// Force a re-resolve of the active device. Useful when the user changes
+    /// the pinned-device preference, or after device hot-plug events.
+    func refreshActiveDevice() {
+        rebindActiveDevice()
+    }
+
+    // MARK: - Per-device mute memory
+
+    private func rememberMuteState(_ muted: Bool, for uid: String?) {
+        guard let uid else { return }
+        var dict = UserDefaults.standard.dictionary(forKey: perDeviceMuteKey) as? [String: Bool] ?? [:]
+        dict[uid] = muted
+        UserDefaults.standard.set(dict, forKey: perDeviceMuteKey)
+    }
+
+    private func recalledMuteState(for uid: String?) -> Bool? {
+        guard let uid else { return nil }
+        let dict = UserDefaults.standard.dictionary(forKey: perDeviceMuteKey) as? [String: Bool] ?? [:]
+        return dict[uid]
     }
 
     // MARK: - Default-device tracking
@@ -45,7 +83,9 @@ final class MicrophoneController: ObservableObject {
             mElement: kAudioObjectPropertyElementMain
         )
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-            self?.rebindToDefaultDevice()
+            // Only react if the user hasn't pinned a specific device.
+            guard let self, Preferences.shared.pinnedDeviceUID == nil else { return }
+            self.rebindActiveDevice()
         }
         AudioObjectAddPropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
@@ -55,27 +95,42 @@ final class MicrophoneController: ObservableObject {
         )
     }
 
-    private func rebindToDefaultDevice() {
-        // Tear down listener bound to old device.
+    private func rebindActiveDevice() {
+        // Tear down listener bound to the previous device.
         if deviceID != AudioDeviceID(kAudioObjectUnknown), let block = muteListener {
             var addr = muteAddress
             AudioObjectRemovePropertyListenerBlock(deviceID, &addr, DispatchQueue.main, block)
         }
         muteListener = nil
 
-        guard let newID = readDefaultInputDevice() else {
+        let resolved = resolveActiveDeviceID()
+        guard let newID = resolved else {
             DispatchQueue.main.async {
                 self.hasInputDevice = false
                 self.deviceID = AudioDeviceID(kAudioObjectUnknown)
+                self.activeDeviceUID = nil
+                self.activeDeviceName = nil
             }
             return
         }
 
         deviceID = newID
-        let muted = readMute(newID)
+        let uid = AudioDevices.uid(for: newID)
+        let name = AudioDevices.listInputs().first(where: { $0.id == newID })?.name
+
+        // Restore last-known mute state for this device, if any. Otherwise read
+        // the live property.
+        let liveMuted = readMute(newID)
+        let restored = recalledMuteState(for: uid) ?? liveMuted
+        if restored != liveMuted {
+            _ = writeMute(newID, muted: restored)
+        }
+
         DispatchQueue.main.async {
             self.hasInputDevice = true
-            self.isMuted = muted
+            self.activeDeviceUID = uid
+            self.activeDeviceName = name
+            self.isMuted = restored
         }
 
         // Bind a fresh listener so external mute changes update our state.
@@ -87,6 +142,14 @@ final class MicrophoneController: ObservableObject {
         }
         muteListener = block
         AudioObjectAddPropertyListenerBlock(newID, &addr, DispatchQueue.main, block)
+    }
+
+    private func resolveActiveDeviceID() -> AudioDeviceID? {
+        if let pinned = Preferences.shared.pinnedDeviceUID,
+           let id = AudioDevices.deviceID(forUID: pinned) {
+            return id
+        }
+        return readDefaultInputDevice()
     }
 
     // MARK: - CoreAudio plumbing

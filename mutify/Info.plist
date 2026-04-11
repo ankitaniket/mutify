@@ -28,5 +28,11 @@
 	<string>Copyright © 2026 Ankit Aniket. All rights reserved.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Mutify reads and toggles the system input device mute state so you can mute your microphone from anywhere with a global shortcut.</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/ankitaniket/mutify/main/appcast.xml</string>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
 </dict>
 </plist>

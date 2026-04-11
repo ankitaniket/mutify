@@ -1,17 +1,18 @@
 import SwiftUI
 import KeyboardShortcuts
 
-/// The simple main window — shows current mute state, the active shortcut,
-/// and the launch-at-login toggle.
+/// Compact main window — current mute state, the toggle shortcut, and a link
+/// into the full Settings sheet for everything else.
 struct MainView: View {
     @ObservedObject private var mic = MicrophoneController.shared
+    @ObservedObject private var stats = MuteStats.shared
     @State private var launchAtLogin: Bool = LaunchAtLogin.isEnabled
 
     var body: some View {
         VStack(spacing: 0) {
             // Hero status block — click anywhere here to toggle mute.
             Button(action: toggleMute) {
-                VStack(spacing: 12) {
+                VStack(spacing: 15) {
                     Image(systemName: mic.isMuted ? "mic.slash.fill" : "mic.fill")
                         .font(.system(size: 56, weight: .semibold))
                         .foregroundStyle(mic.isMuted ? Color.red : Color.green)
@@ -24,9 +25,15 @@ struct MainView: View {
                     Text(mic.isMuted ? "Click to unmute" : "Click to mute")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+
+                    if let name = mic.activeDeviceName {
+                        Text(name)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 28)
+                .padding(.vertical, 24)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -78,6 +85,18 @@ struct MainView: View {
                     }
                     .buttonStyle(.plain)
                     .help("View source on GitHub")
+                }
+
+                Divider()
+
+                HStack {
+                    Image(systemName: "chart.bar.fill")
+                        .foregroundStyle(.secondary)
+                    Text("Today")
+                    Spacer()
+                    Text("\(stats.todayMuteCount) toggles · \(stats.formattedMutedDuration) muted")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(20)

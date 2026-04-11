@@ -19,6 +19,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: "2.0.0"
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.5.0"
 
 targets:
   Mutify:
@@ -41,6 +44,9 @@ targets:
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSMicrophoneUsageDescription: "Mutify reads and toggles the system input device mute state so you can mute your microphone from anywhere with a global shortcut."
         NSHumanReadableCopyright: "Copyright © 2026 Ankit Aniket. All rights reserved."
+        SUFeedURL: "https://raw.githubusercontent.com/ankitaniket/mutify/main/appcast.xml"
+        SUEnableInstallerLauncherService: true
+        SUEnableAutomaticChecks: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ankitaniket.mutify
@@ -53,3 +59,4 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:
       - package: KeyboardShortcuts
+      - package: Sparkle
