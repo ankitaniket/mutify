@@ -277,7 +277,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("Accessibility")
                 card {
-                    row("Announce mute changes via VoiceOver") {
+                    row("Speak mute changes aloud") {
                         Toggle("", isOn: $prefs.voiceOverAnnouncements)
                             .labelsHidden().toggleStyle(.switch)
                     }
