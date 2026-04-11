@@ -14,16 +14,12 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let hosting = NSHostingController(rootView: SettingsView())
         let window = NSWindow(contentViewController: hosting)
         window.title = "Mutify Settings"
-        // .fullSizeContentView lets the SwiftUI TabView extend behind the title
-        // bar, so the tabs sit cleanly against a transparent header instead of
-        // colliding with a separate chrome strip.
-        window.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        // Remove the hairline separator under the title bar so the TabView's
+        // tinted header sits flush with the chrome.
         if #available(macOS 11.0, *) {
             window.titlebarSeparatorStyle = .none
         }
-        window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
         window.center()
         window.setFrameAutosaveName("MutifySettingsWindow")

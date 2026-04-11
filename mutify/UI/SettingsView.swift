@@ -21,7 +21,6 @@ struct SettingsView: View {
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "slider.horizontal.3") }
         }
-        .padding(.top, 28) // breathing room beneath the transparent titlebar
         .frame(width: 560, height: 460)
         .navigationTitle("Mutify Settings")
         .onAppear { devices = AudioDevices.listInputs() }
