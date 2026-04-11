@@ -82,13 +82,20 @@ final class HUDController {
 
     private func announce(_ text: String) {
         guard Preferences.shared.voiceOverAnnouncements else { return }
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            // The element MUST be a real accessibility object (NSView/NSWindow);
+            // passing NSApp causes the announcement to be silently dropped.
+            // Prefer the key window when present (so VoiceOver focus tracking
+            // works), and fall back to our HUD toast window which is always
+            // alive in the process.
+            let element: Any = NSApp.keyWindow ?? self.toastWindow
             NSAccessibility.post(
-                element: NSApp.mainWindow ?? NSApp as Any,
+                element: element,
                 notification: .announcementRequested,
                 userInfo: [
                     .announcement: text,
-                    .priority: NSAccessibilityPriorityLevel.high.rawValue,
+                    .priority: NSNumber(value: NSAccessibilityPriorityLevel.high.rawValue),
                 ]
             )
         }
