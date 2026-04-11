@@ -4,5 +4,10 @@
 <dict>
     <key>com.apple.security.device.audio-input</key>
     <true/>
+    <!-- Required so dyld can load Sparkle.framework, which is signed by the
+         Sparkle Project. Without this, Library Validation rejects the framework
+         because its Team ID does not match Mutify's (we're ad-hoc signed). -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
 </dict>
 </plist>
