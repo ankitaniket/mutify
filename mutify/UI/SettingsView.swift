@@ -60,6 +60,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 
     // MARK: - Shortcuts
@@ -79,6 +80,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 
     // MARK: - Audio
@@ -109,6 +111,7 @@ struct SettingsView: View {
             } header: { Text("Microphone") }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 
     // MARK: - Appearance
@@ -127,6 +130,7 @@ struct SettingsView: View {
             } header: { Text("Menu Bar") }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 
     // MARK: - Advanced
@@ -148,6 +152,7 @@ struct SettingsView: View {
             } header: { Text("Updates") }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 }
 
